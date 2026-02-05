@@ -14,49 +14,49 @@ from pypdf import PdfReader, PdfWriter
 class CustomButton(tk.Canvas):
     """Custom button that works well on macOS"""
 
-    def __init__(self, parent, text, command, bg_color, fg_color='white',
-                 hover_color=None, font=('Helvetica', 11, 'bold'), **kwargs):
+    def __init__(self, parent, text, cmd, bg, fg='white',
+                 hover=None, font=('Helvetica', 11, 'bold'), **kwargs):
         super().__init__(parent, highlightthickness=0, **kwargs)
-        self.command = command
-        self.bg_color = bg_color
-        self.fg_color = fg_color
-        self.hover_color = hover_color or bg_color
-        self.text = text
+        self.cmd = cmd
+        self.bg = bg
+        self.fg = fg
+        self.hover_col = hover or bg
+        self.txt = text
         self.font = font
 
-        # Calculate size based on text
-        self.height = kwargs.get('height', 45)
-        self.width = kwargs.get('width', 200)
+        # size
+        self.h = kwargs.get('height', 45)
+        self.w = kwargs.get('width', 200)
 
-        self.configure(width=self.width, height=self.height)
-        self.draw_button()
+        self.configure(width=self.w, height=self.h)
+        self.draw()
 
-        self.bind('<Button-1>', self.on_click)
-        self.bind('<Enter>', self.on_enter)
-        self.bind('<Leave>', self.on_leave)
+        self.bind('<Button-1>', self.click)
+        self.bind('<Enter>', self.enter)
+        self.bind('<Leave>', self.leave)
 
-    def draw_button(self, hover=False):
+    def draw(self, hovering=False):
         self.delete('all')
-        color = self.hover_color if hover else self.bg_color
+        col = self.hover_col if hovering else self.bg
 
-        # Draw rounded rectangle
-        self.create_rectangle(2, 2, self.width-2, self.height-2,
-                              fill=color, outline=color, width=0)
+        # rectangle
+        self.create_rectangle(2, 2, self.w-2, self.h-2,
+                              fill=col, outline=col, width=0)
 
-        # Draw text
-        self.create_text(self.width//2, self.height//2,
-                         text=self.text, fill=self.fg_color,
+        # text
+        self.create_text(self.w//2, self.h//2,
+                         text=self.txt, fill=self.fg,
                          font=self.font)
 
-    def on_enter(self, event):
-        self.draw_button(hover=True)
+    def enter(self, e):
+        self.draw(hovering=True)
         self.configure(cursor='hand2')
 
-    def on_leave(self, event):
-        self.draw_button(hover=False)
+    def leave(self, e):
+        self.draw(hovering=False)
 
-    def on_click(self, event):
-        self.command()
+    def click(self, e):
+        self.cmd()
 
 
 class PDFPasswordRemoverApp:
@@ -66,81 +66,78 @@ class PDFPasswordRemoverApp:
         self.root.geometry("750x500")
         self.root.resizable(False, False)
 
-        # Set background color
+        # background
         self.root.configure(bg='#f5f5f5')
 
-        # Configure ttk style
+        # style setup
         self.style = ttk.Style()
         self.style.theme_use('default')
 
-        # Custom styles for ttk
         self.style.configure('Custom.TEntry',
                              fieldbackground='white',
                              foreground='#2c3e50',
                              borderwidth=1,
                              relief='solid')
 
-        # Variables
-        self.input_file = tk.StringVar()
-        self.output_file = tk.StringVar()
-        self.password = tk.StringVar()
-        self.status = tk.StringVar(value="Ready to unlock your PDF")
+        # vars
+        self.inp_file = tk.StringVar()
+        self.out_file = tk.StringVar()
+        self.pwd = tk.StringVar()
+        self.status_txt = tk.StringVar(value="Ready to unlock your PDF")
+
+        self.setup_ui()
 
         self.setup_ui()
 
     def setup_ui(self):
-        # Main frame with background
-        main_frame = tk.Frame(self.root, bg='#f5f5f5')
-        main_frame.pack(fill=tk.BOTH, expand=True, padx=30, pady=25)
+        # main frame
+        main = tk.Frame(self.root, bg='#f5f5f5')
+        main.pack(fill=tk.BOTH, expand=True, padx=30, pady=25)
 
-        # Header section
-        header_frame = tk.Frame(main_frame, bg='#f5f5f5')
-        header_frame.pack(fill=tk.X, pady=(0, 25))
+        # header
+        hdr = tk.Frame(main, bg='#f5f5f5')
+        hdr.pack(fill=tk.X, pady=(0, 25))
 
-        # Title with emoji
-        title_label = tk.Label(
-            header_frame,
+        # title
+        tk.Label(
+            hdr,
             text="🔓 PDF Password Remover",
             font=('Helvetica', 22, 'bold'),
             bg='#f5f5f5',
             fg='#2c3e50'
-        )
-        title_label.pack()
+        ).pack()
 
-        subtitle_label = tk.Label(
-            header_frame,
+        tk.Label(
+            hdr,
             text="Remove password protection from your PDF files",
             font=('Helvetica', 11),
             bg='#f5f5f5',
             fg='#7f8c8d'
-        )
-        subtitle_label.pack(pady=(5, 0))
+        ).pack(pady=(5, 0))
 
-        # Content frame with white background
-        content_frame = tk.Frame(main_frame, bg='white', relief=tk.SOLID, bd=1)
-        content_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+        # content area
+        content = tk.Frame(main, bg='white', relief=tk.SOLID, bd=1)
+        content.pack(fill=tk.BOTH, expand=True, pady=10)
 
-        # Add padding inside content frame
-        padded_content = tk.Frame(content_frame, bg='white', padx=25, pady=25)
-        padded_content.pack(fill=tk.BOTH, expand=True)
+        padded = tk.Frame(content, bg='white', padx=25, pady=25)
+        padded.pack(fill=tk.BOTH, expand=True)
 
-        # Input file section
-        self._create_file_row(padded_content, 0, "📄 Input PDF:",
-                              self.input_file, self.browse_input)
+        # file inputs
+        self._make_file_row(padded, 0, "📄 Input PDF:",
+                            self.inp_file, self.browse_input)
 
-        # Output file section
-        self._create_file_row(padded_content, 1, "💾 Output PDF:",
-                              self.output_file, self.browse_output)
+        self._make_file_row(padded, 1, "💾 Output PDF:",
+                            self.out_file, self.browse_output)
 
-        # Password section
-        password_frame = tk.Frame(padded_content, bg='white')
-        password_frame.pack(fill=tk.X, pady=20)
+        # password input
+        pwd_frame = tk.Frame(padded, bg='white')
+        pwd_frame.pack(fill=tk.X, pady=20)
 
-        password_label_frame = tk.Frame(password_frame, bg='white')
-        password_label_frame.pack(side=tk.LEFT)
+        lbl_frame = tk.Frame(pwd_frame, bg='white')
+        lbl_frame.pack(side=tk.LEFT)
 
         tk.Label(
-            password_label_frame,
+            lbl_frame,
             text="🔑 Password:",
             font=('Helvetica', 12),
             bg='white',
@@ -149,13 +146,12 @@ class PDFPasswordRemoverApp:
             anchor='w'
         ).pack()
 
-        password_input_frame = tk.Frame(password_frame, bg='white')
-        password_input_frame.pack(
-            side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+        inp_frame = tk.Frame(pwd_frame, bg='white')
+        inp_frame.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
 
-        self.password_entry = tk.Entry(
-            password_input_frame,
-            textvariable=self.password,
+        self.pwd_entry = tk.Entry(
+            inp_frame,
+            textvariable=self.pwd,
             font=('Helvetica', 12),
             show="•",
             relief=tk.SOLID,
@@ -164,15 +160,15 @@ class PDFPasswordRemoverApp:
             fg='#2c3e50',
             insertbackground='#2c3e50'
         )
-        self.password_entry.pack(fill=tk.X, ipady=6)
+        self.pwd_entry.pack(fill=tk.X, ipady=6)
 
-        # Show password checkbox
-        self.show_password_var = tk.BooleanVar()
-        show_check = tk.Checkbutton(
-            password_frame,
+        # show password checkbox
+        self.show_pwd = tk.BooleanVar()
+        tk.Checkbutton(
+            pwd_frame,
             text="Show",
-            variable=self.show_password_var,
-            command=self.toggle_password,
+            variable=self.show_pwd,
+            command=self.toggle_pwd,
             bg='white',
             fg='#2c3e50',
             font=('Helvetica', 10),
@@ -180,57 +176,55 @@ class PDFPasswordRemoverApp:
             activeforeground='#2c3e50',
             selectcolor='white',
             cursor='hand2'
-        )
-        show_check.pack(side=tk.LEFT)
+        ).pack(side=tk.LEFT)
 
-        # Button section
-        button_frame = tk.Frame(main_frame, bg='#f5f5f5')
-        button_frame.pack(pady=20)
+        # button
+        btn_frame = tk.Frame(main, bg='#f5f5f5')
+        btn_frame.pack(pady=20)
 
-        self.remove_button = CustomButton(
-            button_frame,
+        self.remove_btn = CustomButton(
+            btn_frame,
             text="🔓 Remove Password",
-            command=self.remove_password,
-            bg_color='#27ae60',
-            hover_color='#2ecc71',
+            cmd=self.remove_password,
+            bg='#27ae60',
+            hover='#2ecc71',
             font=('Helvetica', 13, 'bold'),
             width=250,
             height=50
         )
-        self.remove_button.pack()
+        self.remove_btn.pack()
 
-        # Progress section
-        progress_frame = tk.Frame(main_frame, bg='#f5f5f5')
-        progress_frame.pack(fill=tk.X, pady=(10, 0))
+        # progress bar
+        prog_frame = tk.Frame(main, bg='#f5f5f5')
+        prog_frame.pack(fill=tk.X, pady=(10, 0))
 
-        self.progress = ttk.Progressbar(
-            progress_frame,
+        self.prog = ttk.Progressbar(
+            prog_frame,
             mode='indeterminate',
             length=650
         )
-        self.progress.pack(pady=5)
+        self.prog.pack(pady=5)
 
-        # Status label
-        status_label = tk.Label(
-            progress_frame,
-            textvariable=self.status,
+        # status
+        tk.Label(
+            prog_frame,
+            textvariable=self.status_txt,
             font=('Helvetica', 10),
             bg='#f5f5f5',
             fg='#7f8c8d'
-        )
-        status_label.pack()
+        ).pack()
 
-    def _create_file_row(self, parent, row, label_text, variable, command):
-        """Helper to create file input rows"""
-        row_frame = tk.Frame(parent, bg='white')
-        row_frame.pack(fill=tk.X, pady=12)
+    def _make_file_row(self, parent, row, lbl_txt, var, cmd):
+        """file input row"""
+        row = tk.Frame(parent, bg='white')
+        row.pack(fill=tk.X, pady=12)
 
-        label_frame = tk.Frame(row_frame, bg='white')
-        label_frame.pack(side=tk.LEFT)
+        lbl = tk.Frame(row, bg='white')
+        lbl.pack(side=tk.LEFT)
 
         tk.Label(
-            label_frame,
-            text=label_text,
+            lbl,
+            text=lbl_txt,
             font=('Helvetica', 12),
             bg='white',
             fg='#34495e',
@@ -238,180 +232,174 @@ class PDFPasswordRemoverApp:
             anchor='w'
         ).pack()
 
-        entry_frame = tk.Frame(row_frame, bg='white')
-        entry_frame.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+        entry_box = tk.Frame(row, bg='white')
+        entry_box.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
 
-        entry = tk.Entry(
-            entry_frame,
-            textvariable=variable,
+        tk.Entry(
+            entry_box,
+            textvariable=var,
             font=('Helvetica', 11),
             relief=tk.SOLID,
             bd=1,
             bg='#f8f9fa',
             fg='#2c3e50',
             state='readonly'
-        )
-        entry.pack(fill=tk.X, ipady=6)
+        ).pack(fill=tk.X, ipady=6)
 
-        # Custom browse button
-        browse_btn = CustomButton(
-            row_frame,
+        # browse button
+        CustomButton(
+            row,
             text="Browse",
-            command=command,
-            bg_color='#3498db',
-            hover_color='#2980b9',
+            cmd=cmd,
+            bg='#3498db',
+            hover='#2980b9',
             font=('Helvetica', 11, 'bold'),
             width=100,
             height=38
-        )
-        browse_btn.pack(side=tk.LEFT)
+        ).pack(side=tk.LEFT)
 
-    def toggle_password(self):
-        """Toggle password visibility"""
-        if self.show_password_var.get():
-            self.password_entry.configure(show="")
+    def toggle_pwd(self):
+        """show/hide password"""
+        if self.show_pwd.get():
+            self.pwd_entry.configure(show="")
         else:
-            self.password_entry.configure(show="•")
+            self.pwd_entry.configure(show="•")
 
     def browse_input(self):
-        """Browse for input PDF file"""
-        filename = filedialog.askopenfilename(
+        """pick input file"""
+        f = filedialog.askopenfilename(
             title="Select PDF file",
             filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")]
         )
-        if filename:
-            self.input_file.set(filename)
-            # Auto-generate output filename
-            input_path = Path(filename)
-            output_path = input_path.parent / f"{input_path.stem}_unlocked.pdf"
-            self.output_file.set(str(output_path))
-            self.status.set(f"Selected: {input_path.name}")
+        if f:
+            self.inp_file.set(f)
+            # auto set output
+            p = Path(f)
+            out = p.parent / f"{p.stem}_unlocked.pdf"
+            self.out_file.set(str(out))
+            self.status_txt.set(f"Selected: {p.name}")
 
     def browse_output(self):
-        """Browse for output PDF location"""
-        filename = filedialog.asksaveasfilename(
+        """pick output location"""
+        f = filedialog.asksaveasfilename(
             title="Save unlocked PDF as",
             defaultextension=".pdf",
             filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")]
         )
-        if filename:
-            self.output_file.set(filename)
+        if f:
+            self.out_file.set(f)
 
     def remove_password(self):
-        """Remove password from PDF in a separate thread"""
-        # Validate inputs
-        if not self.input_file.get():
+        """remove pwd from pdf"""
+        # validate
+        if not self.inp_file.get():
             messagebox.showerror("Error", "Please select an input PDF file")
             return
 
-        if not self.output_file.get():
+        if not self.out_file.get():
             messagebox.showerror("Error", "Please specify an output location")
             return
 
-        if not self.password.get():
-            result = messagebox.askyesno(
+        if not self.pwd.get():
+            ok = messagebox.askyesno(
                 "No Password",
                 "No password entered. Try to open PDF without password?"
             )
-            if not result:
+            if not ok:
                 return
 
-        # Disable button and start progress
-        self.remove_button.configure(state='disabled')
-        self.progress.start(10)
-        self.status.set("Processing...")
+        # disable button
+        self.remove_btn.configure(state='disabled')
+        self.prog.start(10)
+        self.status_txt.set("Processing...")
 
-        # Run in separate thread to prevent UI freezing
-        thread = threading.Thread(target=self._remove_password_thread)
-        thread.daemon = True
-        thread.start()
+        # process in thread
+        t = threading.Thread(target=self._do_remove)
+        t.daemon = True
+        t.start()
 
-    def _remove_password_thread(self):
-        """Actual password removal logic"""
+    def _do_remove(self):
+        """actual removal logic"""
         try:
-            input_path = self.input_file.get()
-            output_path = self.output_file.get()
-            pwd = self.password.get()
+            inp = self.inp_file.get()
+            out = self.out_file.get()
+            pw = self.pwd.get()
 
-            # Read the encrypted PDF
-            reader = PdfReader(input_path)
+            # read pdf
+            reader = PdfReader(inp)
 
-            # Check if PDF is encrypted
+            # check encryption
             if reader.is_encrypted:
-                if not pwd:
-                    self._show_error(
-                        "PDF is encrypted. Please provide the password.")
+                if not pw:
+                    self._err("PDF is encrypted. Please provide the password.")
                     return
 
-                # Try to decrypt with the password
-                decrypt_result = reader.decrypt(pwd)
+                # try decrypt
+                result = reader.decrypt(pw)
 
-                # pypdf returns 0 for failure, 1 for user password, 2 for owner password
-                if decrypt_result == 0:
-                    self._show_error(
-                        "Incorrect password. Please check and try again.")
+                # 0=fail, 1=user pw, 2=owner pw
+                if result == 0:
+                    self._err("Incorrect password. Please check and try again.")
                     return
-                elif decrypt_result == 1:
-                    self.root.after(0, lambda: self.status.set(
+                elif result == 1:
+                    self.root.after(0, lambda: self.status_txt.set(
                         "Decrypted with user password"))
-                elif decrypt_result == 2:
-                    self.root.after(0, lambda: self.status.set(
+                elif result == 2:
+                    self.root.after(0, lambda: self.status_txt.set(
                         "Decrypted with owner password"))
 
-            # Create writer and copy all pages
+            # copy pages
             writer = PdfWriter()
 
-            # Try to access pages (this will fail if password is wrong)
             try:
-                page_count = len(reader.pages)
-                for page in reader.pages:
-                    writer.add_page(page)
-            except Exception as page_error:
-                self._show_error(
-                    f"Could not read PDF pages. The password may be incorrect.\n{str(page_error)}")
+                num_pages = len(reader.pages)
+                for pg in reader.pages:
+                    writer.add_page(pg)
+            except Exception as e:
+                self._err(
+                    f"Could not read PDF pages. The password may be incorrect.\n{str(e)}")
                 return
 
-            # Copy metadata if available
+            # copy metadata
             try:
                 if reader.metadata:
                     writer.add_metadata(reader.metadata)
             except:
-                pass  # Skip metadata if it causes issues
+                pass
 
-            # Write to output file
-            with open(output_path, "wb") as output_file:
-                writer.write(output_file)
+            # save
+            with open(out, "wb") as f:
+                writer.write(f)
 
-            self._show_success(
-                f"Success! Unlocked PDF saved to:\n{Path(output_path).name}")
+            self._success(f"Success! Unlocked PDF saved to:\n{Path(out).name}")
 
         except Exception as e:
-            self._show_error(f"An error occurred:\n{str(e)}")
+            self._err(f"An error occurred:\n{str(e)}")
 
-    def _show_success(self, message):
-        """Show success message on main thread"""
-        self.root.after(0, lambda: self._finish_processing(True, message))
+    def _success(self, msg):
+        """show success"""
+        self.root.after(0, lambda: self._done(True, msg))
 
-    def _show_error(self, message):
-        """Show error message on main thread"""
-        self.root.after(0, lambda: self._finish_processing(False, message))
+    def _err(self, msg):
+        """show error"""
+        self.root.after(0, lambda: self._done(False, msg))
 
-    def _finish_processing(self, success, message):
-        """Clean up after processing"""
-        self.progress.stop()
-        self.remove_button.configure(state='normal')
+    def _done(self, success, msg):
+        """cleanup"""
+        self.prog.stop()
+        self.remove_btn.configure(state='normal')
 
         if success:
-            self.status.set("Completed successfully")
-            messagebox.showinfo("Success", message)
-            # Clear fields
-            self.input_file.set("")
-            self.output_file.set("")
-            self.password.set("")
-            self.status.set("Ready to unlock your PDF")
+            self.status_txt.set("Completed successfully")
+            messagebox.showinfo("Success", msg)
+            # clear
+            self.inp_file.set("")
+            self.out_file.set("")
+            self.pwd.set("")
+            self.status_txt.set("Ready to unlock your PDF")
         else:
-            self.status.set("Error occurred")
-            messagebox.showerror("Error", message)
+            self.status_txt.set("Error occurred")
+            messagebox.showerror("Error", msg)
 
 
 def main():
